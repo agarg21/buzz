@@ -37,7 +37,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: {#AppSourcePath}; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: {#AppSourcePath}; DestDir: "{app}"; Excludes: "*.lib"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Ship the OpenSSL pair next to Buzz.exe so a system OpenSSL on PATH can't shadow libcrypto
 ; while libssl is still loaded from the bundle (mismatched pair => "CRYPTO_calloc not found").
 Source: "dist\Buzz\_internal\libssl-3-x64.dll"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
