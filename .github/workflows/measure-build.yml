@@ -183,3 +183,22 @@ jobs:
         shell: bash
         run: ls -l dist/*.exe && du -sh dist/Buzz && find dist/Buzz -name '*.lib' | wc -l
 
+
+      # fork-only smoke check: silent-install the built installer and start the installed app
+      - name: Smoke - install and start
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem dist\*.exe | Select-Object -First 1
+          Start-Process -FilePath $exe.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/DIR=D:\buzz-inst' -Wait
+          $n = (Get-ChildItem D:\buzz-inst -Recurse -Filter *.lib -ErrorAction SilentlyContinue | Measure-Object).Count
+          Write-Host "installed .lib files: $n"
+          Get-ChildItem D:\buzz-inst\Buzz.exe
+          $env:QT_QPA_PLATFORM = 'offscreen'
+          $p = Start-Process -FilePath D:\buzz-inst\Buzz.exe -ArgumentList '--help' -PassThru -RedirectStandardOutput D:\help.txt -RedirectStandardError D:\help_err.txt
+          if (-not $p.WaitForExit(180000)) { Write-Host 'still running after 180 s (GUI up?)'; $p.Kill() }
+          Write-Host "exit code: $($p.ExitCode)"; Get-Content D:\help.txt; Get-Content D:\help_err.txt
+          $env:QT_QPA_PLATFORM = 'offscreen'
+          $g = Start-Process -FilePath D:\buzz-inst\Buzz.exe -PassThru -RedirectStandardError D:\gui_err.txt
+          Start-Sleep 60
+          if ($g.HasExited) { Write-Host "GUI exited early: $($g.ExitCode)"; Get-Content D:\gui_err.txt; exit 1 } else { Write-Host 'GUI process alive after 60 s'; Stop-Process -Id $g.Id -Force }
+          Get-Content D:\gui_err.txt | Select-Object -Last 30
